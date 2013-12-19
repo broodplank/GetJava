@@ -1,0 +1,57 @@
+#!/bin/bash
+# getjava v1.0
+# to get java code from apks instantly
+# by broodplank
+# 
+# Credits: 
+# Dex2Jar - Google
+# JAD - Pavel Kouznetsov
+
+if [[ ( $1 = "--getdeps" ) || ( $2 = "--getdeps" ) ]]; then
+	echo "Installing required dependencies..."
+        echo
+        sudo apt-get install p7zip unzip wget -y
+        wget -P ~ http://www.broodplank.net/files/getjava_dep.zip
+        unzip -o ~/getjava_dep.zip -d ~/bin
+	rm -f ~/getjava_dep.zip
+        echo "Done, please restart the script"
+	exit
+fi;  
+
+
+if [[ $2 = "--debug" ]]; then
+	export DEBUGPARAM1="-d -v"
+	export DEBUGPARAM2="-v"
+else
+	export DEBUGPARAM1=""
+	export DEBUGPARAM2=""
+fi;  
+
+
+if [[ ( $1 = "" ) || ( $1 = "--help" ) || ( $1 = "-help" ) ]]; then
+        echo "getjava -- get java from apk or jar instantly"
+	echo "usage: getjava [apk/jar path] [options]"
+        echo 
+        echo "options:"
+        echo " --getdeps		Installs all required dependencies automatically"
+        echo " --debug		Show additional debugging information"
+	echo
+	echo "by broodplank"
+	exit
+else
+	DIR=${1%/*}
+	FILE=${1##*/}
+        EXTENSION=${1##*.}
+        OUTDIR="${PWD}/${FILE}_out"
+fi;
+
+rm -Rf ${OUTDIR}
+rm -Rf ${PWD}/${FILE}_java
+mkdir -p ${OUTDIR} 
+7za x -yr -o${OUTDIR} ${1} classes.dex
+d2j-dex2jar.sh ${DEBUGPARAM1} -os -ts ${OUTDIR}/classes.dex -o ${OUTDIR}/classes_dex2jar.jar
+7za x -yr -o${OUTDIR}/out ${OUTDIR}/classes_dex2jar.jar
+find -iname '*.class' -execdir jad ${DEBUGPARAM2} -o -r -s .java -d ${OUTDIR}/java -o {} \;
+rm ${OUTDIR}/classes.dex ${OUTDIR}/classes_dex2jar.jar 
+mv -f ${OUTDIR}/java ${PWD}/${FILE}_java
+rm -Rf ${OUTDIR}
